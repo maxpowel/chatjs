@@ -526,7 +526,7 @@
             /// <param name="data" type="Array">List of users</param>
             var _this = this;
             _this.chatContainer.getContent().html('');
-            if (data.length <= 1) {
+            if (data.length < 1) {
                 $("<div/>").addClass("user-list-empty").text(_this.opts.emptyRoomText).appendTo(_this.chatContainer.getContent());
             }
             else {
