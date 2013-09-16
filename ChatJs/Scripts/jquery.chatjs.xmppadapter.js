@@ -51,19 +51,39 @@ XMPPAdapter.prototype = {
  var messages = [];
  var url ="/http-bind";
  
+ var usersList = []
+ var usersMap = {}
  /* Single string for jid may be used in the future */
  $.xmpp.connect({url:url, jid: this.userId+"@"+this.host, password: this.password,
                 	onConnect: function(){
 						$.xmpp.setPresence(null);
+						$.xmpp.getRoster()
                         chat.onReady();
                         console.log("Connected")
 					},
 					onPresence: function(presence){
-						
-						/*
-						 * TODO: Call chat.client.usersListChanged(usersList);
-						 */
-					
+						var from = presence.from.split("@")[0]
+						var to = presence.to.split("@")[0]
+						if(from != to){
+							console.log(presence)
+							var status = 0
+							if(presence.show == undefined){
+								status = 1
+							}
+							var user = usersMap[from]
+							if(user == undefined){
+								user = {
+								Id: presence.from,
+								Name: presence.from,
+								Status: status
+								}
+								usersList.push(user);
+								usersMap[from] = user
+							}else user.Status = status
+							
+							
+							chat.client.usersListChanged(usersList);
+						}
 					},
 					onDisconnect: function(){
 						/*
@@ -94,6 +114,33 @@ XMPPAdapter.prototype = {
 						 * TODO: Do stuff when error
 						 */
 						alert(error.error);
+					},onIq:function(data){
+						//Update user list
+						 var query = $(data).find("query");
+						 if(query.length){
+							 if(query.attr("xmlns") == "jabber:iq:roster"){
+								 $.each(query.find("item"), function(i,e){
+									 var element = $(e)
+									 var jid = element.attr("jid")
+									 var from = jid.split("@")[0]
+									 var name = element.attr("name")
+									 
+									 var user = usersMap[from]
+									 if(user == undefined){
+										user = {
+										Id: jid,
+										Name: jid,
+										Status: 0
+										}
+										usersList.push(user);
+										usersMap[from] = user
+									 }
+								 });
+								 chat.client.usersListChanged(usersList);
+								 
+							 }
+						 }
+						
 					}
 				});	
         var _this = this;
